@@ -1,0 +1,46 @@
+---
+interface Props {
+  href: string;
+  title: string;
+  countries: string[];
+  days: number;
+  vibes: string[];
+  excerpt?: string;
+  cover_color: string;
+}
+
+const { href, title, countries, days, vibes, excerpt, cover_color } = Astro.props;
+---
+
+<a
+  href={href}
+  class="group block border transition-colors hover:border-[color:var(--color-ink)]"
+  style="border-color: var(--color-line)"
+>
+  <div class="aspect-[3/2] w-full" style={`background-color: ${cover_color}`}></div>
+  <div class="p-6">
+    <p class="font-mono text-xs uppercase tracking-widest" style="color: var(--color-muted)">
+      {countries.join(' · ')} &middot; {days} days
+    </p>
+    <h2 class="font-display mt-2 text-2xl font-medium leading-tight tracking-tight md:text-3xl">
+      {title}
+    </h2>
+    {excerpt && (
+      <p class="mt-3 text-sm leading-relaxed" style="color: var(--color-muted)">
+        {excerpt}
+      </p>
+    )}
+    {vibes.length > 0 && (
+      <div class="mt-5 flex flex-wrap gap-2">
+        {vibes.map((v) => (
+          <span
+            class="font-mono text-[10px] uppercase tracking-widest"
+            style="color: var(--color-muted)"
+          >
+            {v}
+          </span>
+        ))}
+      </div>
+    )}
+  </div>
+</a>

@@ -1,0 +1,49 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'Travel itineraries by Ashi.' } = Astro.props;
+const base = import.meta.env.BASE_URL;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
+    <title>{title}</title>
+  </head>
+  <body>
+    <header class="border-b" style="border-color: var(--color-line)">
+      <div class="mx-auto flex max-w-5xl items-baseline justify-between px-6 py-6">
+        <a href={base} class="font-display text-xl font-medium tracking-tight">wanderlust</a>
+        <nav class="font-mono text-xs uppercase tracking-widest" style="color: var(--color-muted)">
+          <a href={base} class="hover:text-[color:var(--color-ink)]">trips</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="mx-auto max-w-5xl px-6 py-12 md:py-20">
+      <slot />
+    </main>
+
+    <footer class="mt-24 border-t" style="border-color: var(--color-line)">
+      <div class="mx-auto max-w-5xl px-6 py-10">
+        <p class="font-mono text-xs uppercase tracking-widest" style="color: var(--color-muted)">
+          by ashi &middot; <a href="https://instagram.com/aaashi.b" class="hover:text-[color:var(--color-ink)]">@aaashi.b</a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

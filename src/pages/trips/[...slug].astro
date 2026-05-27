@@ -1,0 +1,82 @@
+---
+import { getCollection, render } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+
+export async function getStaticPaths() {
+  const trips = await getCollection('trips', ({ data }) => data.status === 'published');
+  return trips.map((trip) => ({
+    params: { slug: trip.id },
+    props: { trip },
+  }));
+}
+
+const { trip } = Astro.props;
+const { Content } = await render(trip);
+const d = trip.data;
+---
+
+<Layout title={`${d.title} · wanderlust`} description={d.excerpt}>
+  <article>
+    <div class="h-2 w-full" style={`background-color: ${d.cover_color}`}></div>
+
+    <header class="mx-auto max-w-2xl pt-12 pb-16 md:pt-20 md:pb-24">
+      <p class="font-mono text-xs uppercase tracking-widest" style="color: var(--color-muted)">
+        {d.countries.join(' · ')}
+      </p>
+      <h1 class="font-display mt-4 text-4xl font-medium leading-[1.05] tracking-tight md:text-6xl">
+        {d.title}
+      </h1>
+      {d.excerpt && (
+        <p class="mt-6 text-lg leading-relaxed" style="color: var(--color-muted)">
+          {d.excerpt}
+        </p>
+      )}
+
+      <dl class="mt-10 grid grid-cols-2 gap-x-8 gap-y-6 border-t pt-8 md:grid-cols-4" style="border-color: var(--color-line)">
+        <div>
+          <dt class="font-mono text-[10px] uppercase tracking-widest" style="color: var(--color-muted)">Days</dt>
+          <dd class="font-display mt-1 text-2xl font-medium">{d.days}</dd>
+        </div>
+        <div>
+          <dt class="font-mono text-[10px] uppercase tracking-widest" style="color: var(--color-muted)">Best season</dt>
+          <dd class="font-display mt-1 text-lg">{d.best_season}</dd>
+        </div>
+        {d.budget_band && (
+          <div>
+            <dt class="font-mono text-[10px] uppercase tracking-widest" style="color: var(--color-muted)">Budget</dt>
+            <dd class="font-display mt-1 text-lg">{d.budget_band}</dd>
+          </div>
+        )}
+        {d.vibes.length > 0 && (
+          <div class="col-span-2">
+            <dt class="font-mono text-[10px] uppercase tracking-widest" style="color: var(--color-muted)">Vibe</dt>
+            <dd class="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+              {d.vibes.map((v) => (
+                <span class="text-sm" style="color: var(--color-ink)">{v}</span>
+              ))}
+            </dd>
+          </div>
+        )}
+      </dl>
+    </header>
+
+    <div class="prose-trip">
+      <Content />
+    </div>
+
+    {d.where_i_stayed.length > 0 && (
+      <aside class="prose-trip mt-24 border-t pt-12" style="border-color: var(--color-line)">
+        <h2 class="font-display text-2xl font-medium tracking-tight">Where I stayed</h2>
+        <ul class="mt-6 space-y-4">
+          {d.where_i_stayed.map((s) => (
+            <li>
+              <p class="font-mono text-[10px] uppercase tracking-widest" style="color: var(--color-muted)">{s.city}</p>
+              <p class="font-display text-lg">{s.name}</p>
+              {s.notes && <p class="text-sm" style="color: var(--color-muted)">{s.notes}</p>}
+            </li>
+          ))}
+        </ul>
+      </aside>
+    )}
+  </article>
+</Layout>
