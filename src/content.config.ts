@@ -17,6 +17,11 @@ const trips = defineCollection({
       .array(z.object({ city: z.string(), name: z.string(), notes: z.string().optional() }))
       .default([]),
     budget_band: z.string().optional(),
+    trip_date: z
+      .string()
+      .regex(/^\d{4}-\d{2}$/, 'Use YYYY-MM')
+      .optional(),
+    visa_refs: z.array(z.string()).optional(),
   }),
 });
 

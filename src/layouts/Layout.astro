@@ -30,6 +30,9 @@ const base = import.meta.env.BASE_URL;
         <a href={base} class="font-display text-xl font-medium tracking-tight">wanderlust</a>
         <nav class="font-mono text-xs uppercase tracking-widest" style="color: var(--color-muted)">
           <a href={base} class="hover:text-[color:var(--color-ink)]">trips</a>
+          <a href={`${base.replace(/\/$/, '')}/map`} class="ml-6 hover:text-[color:var(--color-ink)]">map</a>
+          <a href={`${base.replace(/\/$/, '')}/visa`} class="ml-6 hover:text-[color:var(--color-ink)]">visa</a>
+          <a href={`${base.replace(/\/$/, '')}/about`} class="ml-6 hover:text-[color:var(--color-ink)]">about</a>
         </nav>
       </div>
     </header>

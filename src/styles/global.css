@@ -44,7 +44,8 @@ body {
 
 .prose-trip {
   max-width: 42rem;
-  margin: 0 auto;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .prose-trip h2 {

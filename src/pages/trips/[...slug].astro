@@ -13,6 +13,9 @@ export async function getStaticPaths() {
 const { trip } = Astro.props;
 const { Content } = await render(trip);
 const d = trip.data;
+
+const base = import.meta.env.BASE_URL;
+const visaBase = `${base.replace(/\/$/, '')}/visa`;
 ---
 
 <Layout title={`${d.title} · wanderlust`} description={d.excerpt}>
@@ -73,6 +76,27 @@ const d = trip.data;
               <p class="font-mono text-[10px] uppercase tracking-widest" style="color: var(--color-muted)">{s.city}</p>
               <p class="font-display text-lg">{s.name}</p>
               {s.notes && <p class="text-sm" style="color: var(--color-muted)">{s.notes}</p>}
+            </li>
+          ))}
+        </ul>
+      </aside>
+    )}
+
+    {d.visa_refs && d.visa_refs.length > 0 && (
+      <aside class="prose-trip mt-16 border-t pt-8" style="border-color: var(--color-line)">
+        <p class="font-mono text-[10px] uppercase tracking-widest" style="color: var(--color-muted)">
+          For Indian passport holders
+        </p>
+        <ul class="mt-3 space-y-1">
+          {d.visa_refs.map((ref) => (
+            <li>
+              <a
+                href={`${visaBase}#${ref}`}
+                class="text-sm"
+                style="color: var(--color-accent)"
+              >
+                Visa notes &middot; {ref} &rarr;
+              </a>
             </li>
           ))}
         </ul>

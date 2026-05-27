@@ -1,0 +1,133 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../layouts/Layout.astro';
+import { feature } from 'topojson-client';
+import { geoNaturalEarth1, geoPath } from 'd3-geo';
+import worldAtlas from 'world-atlas/countries-110m.json';
+
+const base = import.meta.env.BASE_URL;
+const tripHref = (id: string) => `${base.replace(/\/$/, '')}/trips/${id}`;
+
+const trips = (await getCollection('trips', ({ data }) => data.status === 'published'))
+  .sort((a, b) => (b.data.trip_date ?? '').localeCompare(a.data.trip_date ?? ''));
+
+// Country name aliases for mismatches between trip frontmatter and world-atlas naming.
+const countryAlias: Record<string, string> = {
+  USA: 'United States of America',
+  'United States': 'United States of America',
+  UK: 'United Kingdom',
+  'Czech Republic': 'Czechia',
+  Türkiye: 'Turkey',
+};
+const canonical = (name: string) => countryAlias[name] ?? name;
+
+type TripRef = { id: string; title: string; cover_color: string; trip_date?: string };
+const tripsByCountry = new Map<string, TripRef[]>();
+for (const trip of trips) {
+  for (const country of trip.data.countries) {
+    const key = canonical(country);
+    const list = tripsByCountry.get(key) ?? [];
+    list.push({
+      id: trip.id,
+      title: trip.data.title,
+      cover_color: trip.data.cover_color,
+      trip_date: trip.data.trip_date,
+    });
+    tripsByCountry.set(key, list);
+  }
+}
+// Sort each country's trips most-recent first; first entry is the "winning" color.
+for (const list of tripsByCountry.values()) {
+  list.sort((a, b) => (b.trip_date ?? '').localeCompare(a.trip_date ?? ''));
+}
+
+const width = 960;
+const height = 480;
+const fc = feature(worldAtlas as any, (worldAtlas as any).objects.countries) as any;
+const projection = geoNaturalEarth1().fitSize([width, height], fc);
+const path = geoPath(projection);
+
+type Country = { name: string; d: string; trips: TripRef[] };
+const countries: Country[] = fc.features.map((f: any) => {
+  const name = f.properties.name as string;
+  const list = tripsByCountry.get(name) ?? [];
+  return { name, d: path(f) ?? '', trips: list };
+});
+
+const totalCountries = [...tripsByCountry.keys()].length;
+const totalTrips = trips.length;
+---
+
+<Layout title="map · wanderlust" description="World map of trips by Ashi.">
+  <section class="mb-12 max-w-2xl">
+    <h1 class="font-display text-4xl font-medium leading-[1.05] tracking-tight md:text-5xl">
+      Where I've been.
+    </h1>
+    <p class="mt-6 text-base leading-relaxed" style="color: var(--color-muted)">
+      {totalCountries} countries across {totalTrips} {totalTrips === 1 ? 'trip' : 'trips'} written up so far.
+      Tap a country to jump to the itinerary.
+    </p>
+  </section>
+
+  <div class="border" style="border-color: var(--color-line)">
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      class="block h-auto w-full"
+      role="img"
+      aria-label="World map highlighting countries with trip itineraries"
+    >
+      {countries.map((c) => (
+        c.trips.length > 0 ? (
+          <a href={tripHref(c.trips[0].id)}>
+            <path
+              d={c.d}
+              fill={c.trips[0].cover_color}
+              stroke="var(--color-bg)"
+              stroke-width="0.5"
+              class="country country--trip"
+            >
+              <title>{`${c.name}, ${c.trips.map((t) => t.title).join(', ')}`}</title>
+            </path>
+          </a>
+        ) : (
+          <path
+            d={c.d}
+            fill="var(--color-line)"
+            stroke="var(--color-bg)"
+            stroke-width="0.5"
+            class="country"
+          >
+            <title>{c.name}</title>
+          </path>
+        )
+      ))}
+    </svg>
+  </div>
+
+  {totalTrips > 0 && (
+    <ul class="mt-10 flex flex-wrap gap-x-6 gap-y-2">
+      {trips.map((t) => (
+        <li class="flex items-center gap-2">
+          <span class="inline-block h-3 w-3" style={`background-color: ${t.data.cover_color}`}></span>
+          <a
+            href={tripHref(t.id)}
+            class="font-mono text-xs uppercase tracking-widest hover:text-[color:var(--color-ink)]"
+            style="color: var(--color-muted)"
+          >
+            {t.data.title}
+          </a>
+        </li>
+      ))}
+    </ul>
+  )}
+</Layout>
+
+<style>
+  .country {
+    transition: opacity 0.15s ease;
+  }
+  .country--trip:hover {
+    opacity: 0.7;
+    cursor: pointer;
+  }
+</style>
