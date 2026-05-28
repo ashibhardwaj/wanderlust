@@ -4,6 +4,7 @@ import Layout from '../layouts/Layout.astro';
 import { feature } from 'topojson-client';
 import { geoNaturalEarth1, geoPath } from 'd3-geo';
 import worldAtlas from '../data/world-india.topo.json';
+import { placeholderCountries } from '../data/placeholders';
 
 const base = import.meta.env.BASE_URL;
 const tripHref = (id: string) => `${base.replace(/\/$/, '')}/trips/${id}`;
@@ -16,6 +17,11 @@ const countryAlias: Record<string, string> = {
   USA: 'United States of America',
   'United States': 'United States of America',
   UK: 'United Kingdom',
+  England: 'United Kingdom',
+  Scotland: 'United Kingdom',
+  Wales: 'United Kingdom',
+  'Northern Ireland': 'United Kingdom',
+  UAE: 'United Arab Emirates',
   'Czech Republic': 'Czechia',
   Türkiye: 'Turkey',
 };
@@ -46,14 +52,100 @@ const fc = feature(worldAtlas as any, (worldAtlas as any).objects.topo) as any;
 const projection = geoNaturalEarth1().fitSize([width, height], fc);
 const path = geoPath(projection);
 
-type Country = { name: string; d: string; trips: TripRef[] };
+// Build a map: canonical country name -> original list entries that collapse
+// to it (e.g. "United Kingdom" -> ["England", "Scotland", "Wales", "Northern
+// Ireland"]). Lets the hover label preserve every place name even when
+// multiple entries share one polygon.
+const placeholderOriginals = new Map<string, string[]>();
+for (const original of placeholderCountries) {
+  const c = canonical(original);
+  const list = placeholderOriginals.get(c) ?? [];
+  list.push(original);
+  placeholderOriginals.set(c, list);
+}
+const placeholderSet = new Set(placeholderOriginals.keys());
+
+type Country = { name: string; d: string; trips: TripRef[]; placeholderLabel: string | null };
 const countries: Country[] = fc.features.map((f: any) => {
   const name = f.properties.NAME as string;
   const list = tripsByCountry.get(name) ?? [];
-  return { name, d: path(f) ?? '', trips: list };
+  const placeholderLabel =
+    list.length === 0 && placeholderSet.has(name)
+      ? (placeholderOriginals.get(name) ?? [name]).join(', ')
+      : null;
+  return { name, d: path(f) ?? '', trips: list, placeholderLabel };
 });
 
-const totalCountries = [...tripsByCountry.keys()].length;
+// Pin definitions for countries the 110m dataset doesn't draw. Multiple country
+// names can share a single pin when they're geographically too close to
+// distinguish at world-map scale (e.g. Hong Kong + Macau, ~60km apart). The
+// pin's label then lists every name, matching how the UK polygon lists its
+// constituents.
+//
+// A pin can render as either a placeholder (muted shade, "coming soon") or a
+// published trip (cover_color, links to the trip detail). When a pin group
+// mixes the two (e.g. you've written up Hong Kong but Macau is still
+// pending), the label spells out each name's status.
+const pinDefinitions: { names: string[]; coords: [number, number] }[] = [
+  { names: ['Bahrain'], coords: [50.56, 26.07] },
+  { names: ['Hong Kong', 'Macau'], coords: [113.85, 22.26] },
+  { names: ['Mauritius'], coords: [57.55, -20.35] },
+  { names: ['Singapore'], coords: [103.82, 1.35] },
+  { names: ['Vatican City'], coords: [12.45, 41.90] },
+];
+
+type Pin = { label: string; cx: number; cy: number; fill: string; href: string | null };
+const placeholderPins: Pin[] = pinDefinitions
+  .map((p) => {
+    type Status =
+      | { name: string; kind: 'trip'; trips: TripRef[] }
+      | { name: string; kind: 'placeholder' };
+
+    const statuses: Status[] = [];
+    for (const n of p.names) {
+      const canon = canonical(n);
+      const t = tripsByCountry.get(canon);
+      if (t && t.length > 0) {
+        statuses.push({ name: n, kind: 'trip', trips: t });
+      } else if (placeholderSet.has(canon)) {
+        statuses.push({ name: n, kind: 'placeholder' });
+      }
+    }
+    if (statuses.length === 0) return null;
+
+    // Most-recent trip across the whole pin group decides the fill and link.
+    const allTrips = statuses.flatMap((s) => (s.kind === 'trip' ? s.trips : []));
+    const recentTrip = allTrips.length > 0
+      ? [...allTrips].sort((a, b) => (b.trip_date ?? '').localeCompare(a.trip_date ?? ''))[0]
+      : null;
+
+    // Build a suffix per name (trip title(s) or "coming soon"). If every name
+    // shares the same suffix, collapse to one combined label; otherwise spell
+    // out each status individually so a mixed group reads clearly.
+    const suffixes = statuses.map((s) =>
+      s.kind === 'trip' ? s.trips.map((t) => t.title).join(', ') : 'coming soon'
+    );
+    const allSame = suffixes.every((x) => x === suffixes[0]);
+    const label = allSame
+      ? `${statuses.map((s) => s.name).join(', ')} (${suffixes[0]})`
+      : statuses.map((s, i) => `${s.name} (${suffixes[i]})`).join(', ');
+
+    const [x, y] = projection(p.coords)!;
+    return {
+      label,
+      cx: x,
+      cy: y,
+      fill: recentTrip ? recentTrip.cover_color : 'var(--color-placeholder)',
+      href: recentTrip ? tripHref(recentTrip.id) : null,
+    };
+  })
+  .filter((p): p is Pin => p !== null);
+
+const totalCountriesWritten = [...tripsByCountry.keys()].length;
+// Count raw entries the user listed, not the polygon count, so UK constituents
+// (England, Scotland, Wales, Northern Ireland) count as 4 visited places even
+// though they share one polygon.
+const totalCountriesPlaceholder = new Set(placeholderCountries).size;
 const totalTrips = trips.length;
 ---
 
@@ -63,8 +155,7 @@ const totalTrips = trips.length;
       Where I've been.
     </h1>
     <p class="mt-6 text-base leading-relaxed" style="color: var(--color-muted)">
-      {totalCountries} countries across {totalTrips} {totalTrips === 1 ? 'trip' : 'trips'} written up so far.
-      Tap a country to jump to the itinerary.
+      {totalCountriesWritten} {totalCountriesWritten === 1 ? 'country' : 'countries'} written up across {totalTrips} {totalTrips === 1 ? 'trip' : 'trips'}{totalCountriesPlaceholder > 0 && `, with ${totalCountriesPlaceholder} more on the way`}. Tap a colored country to read its itinerary; shaded ones are coming soon.
     </p>
   </section>
 
@@ -87,9 +178,19 @@ const totalTrips = trips.length;
                 stroke-width="0.5"
                 class="country country--trip"
               >
-                <title>{`${c.name}, ${c.trips.map((t) => t.title).join(', ')}`}</title>
+                <title>{`${c.name} (${c.trips.map((t) => t.title).join(', ')})`}</title>
               </path>
             </a>
+          ) : c.placeholderLabel ? (
+            <path
+              d={c.d}
+              fill="var(--color-placeholder)"
+              stroke="var(--color-bg)"
+              stroke-width="0.5"
+              class="country country--placeholder"
+            >
+              <title>{`${c.placeholderLabel} (coming soon)`}</title>
+            </path>
           ) : (
             <path
               d={c.d}
@@ -100,6 +201,35 @@ const totalTrips = trips.length;
             >
               <title>{c.name}</title>
             </path>
+          )
+        ))}
+        {placeholderPins.map((p) => (
+          p.href ? (
+            <a href={p.href}>
+              <circle
+                cx={p.cx}
+                cy={p.cy}
+                r={2.5}
+                fill={p.fill}
+                stroke="var(--color-bg)"
+                stroke-width="0.5"
+                class="country country--trip"
+              >
+                <title>{p.label}</title>
+              </circle>
+            </a>
+          ) : (
+            <circle
+              cx={p.cx}
+              cy={p.cy}
+              r={2.5}
+              fill={p.fill}
+              stroke="var(--color-bg)"
+              stroke-width="0.5"
+              class="country country--placeholder"
+            >
+              <title>{p.label}</title>
+            </circle>
           )
         ))}
       </g>

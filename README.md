@@ -71,12 +71,29 @@ src/
   styles/global.css             Design tokens + .prose-trip styles
 ```
 
-The home page renders an SVG world map at build time using `d3-geo` and a
-TopoJSON dataset shipped in `src/data/world-india.topo.json`. Country fills
-match the trip's `cover_color`; if two trips share a country, the one with the
-most recent `trip_date` wins. Pan and zoom are handled client-side via
-`d3-zoom` + `d3-selection`. Single taps still fire the country link to the
-trip detail.
+The home page renders an SVG world map at build time using `d3-geo`. Country
+fills match the trip's `cover_color`; if two trips share a country, the one
+with the most recent `trip_date` wins. Pan and zoom are handled client-side
+via `d3-zoom` + `d3-selection`. Single taps still fire the country link to
+the trip detail.
+
+The dataset is Natural Earth 110m with India's borders patched to include
+Pakistan-administered Kashmir and Aksai Chin (from cB-Abhinav-Gautam's
+World-Map-India-Complete), shipped as `src/data/world-india.topo.json`. India
+draws per the boundaries claimed by India, which matters for an
+Indian-passport audience.
+
+Small countries the 110m dataset doesn't draw (Bahrain, Hong Kong, Macau,
+Mauritius, Singapore, Vatican City) render as SVG pins at hand-coded
+coordinates; see `pinDefinitions` in `src/pages/index.astro`. Each entry can
+group multiple country names under one pin when they're too close to
+distinguish at world-map scale (e.g. Hong Kong + Macau).
+
+Countries listed in `src/data/placeholders.ts` (visited but not yet written
+up) render in a muted `--color-placeholder` shade, with a "coming soon" hover
+hint and no link. When you publish an itinerary that covers a placeholder
+country, the trip's `cover_color` takes over automatically; you can leave the
+placeholder list as-is or prune it later.
 
 ## Design tokens
 
@@ -98,4 +115,4 @@ name or use a custom domain, update `site` and `base` in `astro.config.mjs`.
 World map TopoJSON is based on [cB-Abhinav-Gautam/World-Map-India-Complete](https://github.com/cB-Abhinav-Gautam/World-Map-India-Complete),
 which extends the public-domain Natural Earth dataset to draw India with its
 claimed boundaries (Pakistan-administered Kashmir and Aksai Chin merged into
-India). Required for sites primarily read in India.
+India).
