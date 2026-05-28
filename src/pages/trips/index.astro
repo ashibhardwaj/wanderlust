@@ -1,0 +1,54 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import TripCard from '../../components/TripCard.astro';
+
+const trips = (await getCollection('trips', ({ data }) => data.status === 'published'))
+  .sort((a, b) => a.data.title.localeCompare(b.data.title));
+
+const base = import.meta.env.BASE_URL;
+const tripHref = (id: string) => `${base.replace(/\/$/, '')}/trips/${id}`;
+---
+
+<Layout title="trips · wanderlust">
+  <section class="mb-16 max-w-2xl">
+    <p class="font-mono text-xs uppercase tracking-widest" style="color: var(--color-muted)">
+      free · reusable · itineraries
+    </p>
+    <h1 class="font-display mt-4 text-4xl font-medium leading-[1.05] tracking-tight md:text-6xl">
+      Trips I've taken, written so you can take them too.
+    </h1>
+    <p class="mt-6 text-base leading-relaxed" style="color: var(--color-muted)">
+      40+ countries in five years. Notes on what worked, what to book ahead, and what to skip.
+      Day-by-day, with optional branches when a trip splits into two vibes.
+    </p>
+  </section>
+
+  <section>
+    <div class="mb-6 flex items-baseline justify-between border-b pb-4" style="border-color: var(--color-line)">
+      <h2 class="font-mono text-xs uppercase tracking-widest" style="color: var(--color-muted)">
+        Trips · {trips.length}
+      </h2>
+    </div>
+
+    {trips.length === 0 ? (
+      <p class="font-mono text-sm" style="color: var(--color-muted)">
+        First trip drops soon.
+      </p>
+    ) : (
+      <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
+        {trips.map((trip) => (
+          <TripCard
+            href={tripHref(trip.id)}
+            title={trip.data.title}
+            countries={trip.data.countries}
+            days={trip.data.days}
+            vibes={trip.data.vibes}
+            excerpt={trip.data.excerpt}
+            cover_color={trip.data.cover_color}
+          />
+        ))}
+      </div>
+    )}
+  </section>
+</Layout>

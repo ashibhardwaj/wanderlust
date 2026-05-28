@@ -58,24 +58,25 @@ Body is plain MDX. The styling expects:
 
 ```
 src/
-  content.config.ts          Zod schema for trips
-  content/trips/             MDX itineraries
-  layouts/Layout.astro       Base HTML + header/footer
-  components/TripCard.astro  Home page card
+  content.config.ts             Zod schema for trips
+  content/trips/                MDX itineraries
+  layouts/Layout.astro          Base HTML + header/footer
+  components/TripCard.astro     Trips listing card
   pages/
-    index.astro              Home (lists published trips)
-    trips/[...slug].astro    Trip detail page
-    about.astro              About page
-    map.astro                World map of all trips
-    visa.astro               Visa notes for Indian passport (anchored sections)
-  styles/global.css          Design tokens + .prose-trip styles
+    index.astro                 Home (world map of trips)
+    trips/index.astro           Trips listing
+    trips/[...slug].astro       Trip detail page
+    about.astro                 About page
+    visa.astro                  Visa notes for Indian passport (anchored sections)
+  styles/global.css             Design tokens + .prose-trip styles
 ```
 
-The map page renders a static SVG at build time using `d3-geo` + `world-atlas`
-TopoJSON. No client JS. Countries appearing in any trip get filled with that
-trip's `cover_color`. If two trips share a country, the one with the most
-recent `trip_date` wins the fill; both trips show in the SVG `<title>` (browser
-hover tooltip), and the country links to the most-recent trip.
+The home page renders an SVG world map at build time using `d3-geo` and a
+TopoJSON dataset shipped in `src/data/world-india.topo.json`. Country fills
+match the trip's `cover_color`; if two trips share a country, the one with the
+most recent `trip_date` wins. Pan and zoom are handled client-side via
+`d3-zoom` + `d3-selection`. Single taps still fire the country link to the
+trip detail.
 
 ## Design tokens
 
@@ -91,3 +92,10 @@ Actions) after the first push.
 
 Site lives at `https://<user>.github.io/wanderlust/`. If you change the repo
 name or use a custom domain, update `site` and `base` in `astro.config.mjs`.
+
+## Credits
+
+World map TopoJSON is based on [cB-Abhinav-Gautam/World-Map-India-Complete](https://github.com/cB-Abhinav-Gautam/World-Map-India-Complete),
+which extends the public-domain Natural Earth dataset to draw India with its
+claimed boundaries (Pakistan-administered Kashmir and Aksai Chin merged into
+India). Required for sites primarily read in India.

@@ -1,54 +1,162 @@
 ---
 import { getCollection } from 'astro:content';
 import Layout from '../layouts/Layout.astro';
-import TripCard from '../components/TripCard.astro';
-
-const trips = (await getCollection('trips', ({ data }) => data.status === 'published'))
-  .sort((a, b) => a.data.title.localeCompare(b.data.title));
+import { feature } from 'topojson-client';
+import { geoNaturalEarth1, geoPath } from 'd3-geo';
+import worldAtlas from '../data/world-india.topo.json';
 
 const base = import.meta.env.BASE_URL;
 const tripHref = (id: string) => `${base.replace(/\/$/, '')}/trips/${id}`;
+
+const trips = (await getCollection('trips', ({ data }) => data.status === 'published'))
+  .sort((a, b) => (b.data.trip_date ?? '').localeCompare(a.data.trip_date ?? ''));
+
+// Country name aliases for mismatches between trip frontmatter and world-atlas naming.
+const countryAlias: Record<string, string> = {
+  USA: 'United States of America',
+  'United States': 'United States of America',
+  UK: 'United Kingdom',
+  'Czech Republic': 'Czechia',
+  Türkiye: 'Turkey',
+};
+const canonical = (name: string) => countryAlias[name] ?? name;
+
+type TripRef = { id: string; title: string; cover_color: string; trip_date?: string };
+const tripsByCountry = new Map<string, TripRef[]>();
+for (const trip of trips) {
+  for (const country of trip.data.countries) {
+    const key = canonical(country);
+    const list = tripsByCountry.get(key) ?? [];
+    list.push({
+      id: trip.id,
+      title: trip.data.title,
+      cover_color: trip.data.cover_color,
+      trip_date: trip.data.trip_date,
+    });
+    tripsByCountry.set(key, list);
+  }
+}
+for (const list of tripsByCountry.values()) {
+  list.sort((a, b) => (b.trip_date ?? '').localeCompare(a.trip_date ?? ''));
+}
+
+const width = 960;
+const height = 480;
+const fc = feature(worldAtlas as any, (worldAtlas as any).objects.topo) as any;
+const projection = geoNaturalEarth1().fitSize([width, height], fc);
+const path = geoPath(projection);
+
+type Country = { name: string; d: string; trips: TripRef[] };
+const countries: Country[] = fc.features.map((f: any) => {
+  const name = f.properties.NAME as string;
+  const list = tripsByCountry.get(name) ?? [];
+  return { name, d: path(f) ?? '', trips: list };
+});
+
+const totalCountries = [...tripsByCountry.keys()].length;
+const totalTrips = trips.length;
 ---
 
 <Layout title="wanderlust · itineraries by ashi">
-  <section class="mb-16 max-w-2xl">
-    <p class="font-mono text-xs uppercase tracking-widest" style="color: var(--color-muted)">
-      free · reusable · itineraries
-    </p>
-    <h1 class="font-display mt-4 text-4xl font-medium leading-[1.05] tracking-tight md:text-6xl">
-      Trips I've taken, written so you can take them too.
+  <section class="mb-12 max-w-2xl">
+    <h1 class="font-display text-4xl font-medium leading-[1.05] tracking-tight md:text-5xl">
+      Where I've been.
     </h1>
     <p class="mt-6 text-base leading-relaxed" style="color: var(--color-muted)">
-      40+ countries in five years. Notes on what worked, what to book ahead, and what to skip.
-      Day-by-day, with optional branches when a trip splits into two vibes.
+      {totalCountries} countries across {totalTrips} {totalTrips === 1 ? 'trip' : 'trips'} written up so far.
+      Tap a country to jump to the itinerary.
     </p>
   </section>
 
-  <section>
-    <div class="mb-6 flex items-baseline justify-between border-b pb-4" style="border-color: var(--color-line)">
-      <h2 class="font-mono text-xs uppercase tracking-widest" style="color: var(--color-muted)">
-        Trips · {trips.length}
-      </h2>
-    </div>
-
-    {trips.length === 0 ? (
-      <p class="font-mono text-sm" style="color: var(--color-muted)">
-        First trip drops soon.
-      </p>
-    ) : (
-      <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
-        {trips.map((trip) => (
-          <TripCard
-            href={tripHref(trip.id)}
-            title={trip.data.title}
-            countries={trip.data.countries}
-            days={trip.data.days}
-            vibes={trip.data.vibes}
-            excerpt={trip.data.excerpt}
-            cover_color={trip.data.cover_color}
-          />
+  <div class="border" style="border-color: var(--color-line)">
+    <svg
+      id="world-map"
+      viewBox={`0 0 ${width} ${height}`}
+      class="block h-auto w-full"
+      role="img"
+      aria-label="World map highlighting countries with trip itineraries. Scroll or pinch to zoom; drag to pan."
+    >
+      <g class="map-layer">
+        {countries.map((c) => (
+          c.trips.length > 0 ? (
+            <a href={tripHref(c.trips[0].id)}>
+              <path
+                d={c.d}
+                fill={c.trips[0].cover_color}
+                stroke="var(--color-bg)"
+                stroke-width="0.5"
+                class="country country--trip"
+              >
+                <title>{`${c.name}, ${c.trips.map((t) => t.title).join(', ')}`}</title>
+              </path>
+            </a>
+          ) : (
+            <path
+              d={c.d}
+              fill="var(--color-line)"
+              stroke="var(--color-bg)"
+              stroke-width="0.5"
+              class="country"
+            >
+              <title>{c.name}</title>
+            </path>
+          )
         ))}
-      </div>
-    )}
-  </section>
+      </g>
+    </svg>
+  </div>
+
+  {totalTrips > 0 && (
+    <ul class="mt-10 flex flex-wrap gap-x-6 gap-y-2">
+      {trips.map((t) => (
+        <li class="flex items-center gap-2">
+          <span class="inline-block h-3 w-3" style={`background-color: ${t.data.cover_color}`}></span>
+          <a
+            href={tripHref(t.id)}
+            class="font-mono text-xs uppercase tracking-widest hover:text-[color:var(--color-ink)]"
+            style="color: var(--color-muted)"
+          >
+            {t.data.title}
+          </a>
+        </li>
+      ))}
+    </ul>
+  )}
 </Layout>
+
+<style>
+  #world-map {
+    cursor: grab;
+    touch-action: none;
+  }
+  #world-map:active {
+    cursor: grabbing;
+  }
+  .country {
+    transition: opacity 0.15s ease;
+  }
+  .country--trip:hover {
+    opacity: 0.7;
+    cursor: pointer;
+  }
+</style>
+
+<script>
+  import { select } from 'd3-selection';
+  import { zoom } from 'd3-zoom';
+
+  const svgEl = document.getElementById('world-map');
+  if (svgEl) {
+    const vb = svgEl.getAttribute('viewBox')!.split(/\s+/).map(Number);
+    const [, , w, h] = vb;
+    const svg = select(svgEl as unknown as Element);
+    const layer = svg.select('g.map-layer');
+    const zoomBehavior = zoom<SVGSVGElement, unknown>()
+      .scaleExtent([1, 12])
+      .translateExtent([[0, 0], [w, h]])
+      .on('zoom', (event) => {
+        layer.attr('transform', event.transform.toString());
+      });
+    svg.call(zoomBehavior as any);
+  }
+</script>
