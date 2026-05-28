@@ -13,6 +13,9 @@ const trips = (await getCollection('trips', ({ data }) => data.status === 'publi
   .sort((a, b) => (b.data.trip_date ?? '').localeCompare(a.data.trip_date ?? ''));
 
 // Country name aliases for mismatches between trip frontmatter and world-atlas naming.
+// Some entries fold neighbouring micro-countries into a bigger polygon when
+// they were visited on the same trip (e.g. Vatican City within Italy,
+// Singapore alongside Malaysia). The hover label lists both names.
 const countryAlias: Record<string, string> = {
   USA: 'United States of America',
   'United States': 'United States of America',
@@ -24,6 +27,8 @@ const countryAlias: Record<string, string> = {
   UAE: 'United Arab Emirates',
   'Czech Republic': 'Czechia',
   Türkiye: 'Turkey',
+  'Vatican City': 'Italy',
+  Singapore: 'Malaysia',
 };
 const canonical = (name: string) => countryAlias[name] ?? name;
 
@@ -90,8 +95,6 @@ const pinDefinitions: { names: string[]; coords: [number, number] }[] = [
   { names: ['Bahrain'], coords: [50.56, 26.07] },
   { names: ['Hong Kong', 'Macau'], coords: [113.85, 22.26] },
   { names: ['Mauritius'], coords: [57.55, -20.35] },
-  { names: ['Singapore'], coords: [103.82, 1.35] },
-  { names: ['Vatican City'], coords: [12.45, 41.90] },
 ];
 
 type Pin = { label: string; cx: number; cy: number; fill: string; href: string | null };
