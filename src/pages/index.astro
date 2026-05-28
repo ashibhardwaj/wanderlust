@@ -56,6 +56,11 @@ const height = 480;
 const fc = feature(worldAtlas as any, (worldAtlas as any).objects.topo) as any;
 const projection = geoNaturalEarth1().fitSize([width, height], fc);
 const path = geoPath(projection);
+// d3-geo emits ~6 decimals of precision by default. At our viewBox + max zoom
+// (12x), one decimal is plenty (~0.08px error at max zoom) and shaves a big
+// chunk off the inline SVG size, which is where most of the HTML weight comes
+// from. Keeps numbers with no decimal point unchanged.
+const trimPath = (d: string | null) => (d ?? '').replace(/(\.\d)\d+/g, '$1');
 
 // Build a map: canonical country name -> original list entries that collapse
 // to it (e.g. "United Kingdom" -> ["England", "Scotland", "Wales", "Northern
@@ -78,7 +83,7 @@ const countries: Country[] = fc.features.map((f: any) => {
     list.length === 0 && placeholderSet.has(name)
       ? (placeholderOriginals.get(name) ?? [name]).join(', ')
       : null;
-  return { name, d: path(f) ?? '', trips: list, placeholderLabel };
+  return { name, d: trimPath(path(f)), trips: list, placeholderLabel };
 });
 
 // Pin definitions for countries the 110m dataset doesn't draw. Multiple country
