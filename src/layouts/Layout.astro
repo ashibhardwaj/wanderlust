@@ -27,7 +27,7 @@ const fontsUrl =
   </head>
   <body>
     <header class="border-b" style="border-color: var(--color-line)">
-      <div class="mx-auto flex max-w-5xl items-baseline justify-between px-6 py-6">
+      <div class="mx-auto flex max-w-5xl flex-col gap-3 px-6 py-6 md:flex-row md:items-baseline md:justify-between">
         <a href={base} class="font-display text-xl font-medium tracking-tight">wanderlust</a>
         <nav class="font-mono text-xs uppercase tracking-widest" style="color: var(--color-muted)">
           <a href={`${base.replace(/\/$/, '')}/trips`} class="hover:text-[color:var(--color-ink)]">trips</a>
