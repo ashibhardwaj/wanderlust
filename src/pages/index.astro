@@ -62,6 +62,34 @@ const path = geoPath(projection);
 // from. Keeps numbers with no decimal point unchanged.
 const trimPath = (d: string | null) => (d ?? '').replace(/(\.\d)\d+/g, '$1');
 
+const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const r1 = (n: number) => Math.round(n * 10) / 10;
+// Multi-trip countries are filled with thin alternating diagonal stripes, one
+// colour per trip, so the fill reads as "more than one trip here" without
+// implying any geography (which solid halves did). STRIPE_ANGLE sets the
+// direction (45 = diagonal, 0 = horizontal, 90 = vertical); STRIPE_BANDS is the
+// band count across the country, so stripe density looks the same regardless of
+// how big the country is on the map.
+const STRIPE_ANGLE = 45;
+const STRIPE_BANDS = 14;
+const stripePattern = (bounds: [number, number, number, number], count: number) => {
+  const [x0, y0, x1, y1] = bounds;
+  const cx = (x0 + x1) / 2;
+  const cy = (y0 + y1) / 2;
+  // A square of side = bbox diagonal, centred on the bbox, still covers the
+  // bbox after rotation, so rotated bands never leave gaps at the corners.
+  const diag = Math.hypot(x1 - x0, y1 - y0) || 1;
+  const bandH = diag / STRIPE_BANDS;
+  const bands = Array.from({ length: STRIPE_BANDS }, (_, i) => ({
+    x: r1(cx - diag / 2),
+    y: r1(cy - diag / 2 + i * bandH),
+    width: r1(diag),
+    height: r1(bandH),
+    trip: i % count,
+  }));
+  return { cx: r1(cx), cy: r1(cy), bands };
+};
+
 // Build a map: canonical country name -> original list entries that collapse
 // to it (e.g. "United Kingdom" -> ["England", "Scotland", "Wales", "Northern
 // Ireland"]). Lets the hover label preserve every place name even when
@@ -75,7 +103,13 @@ for (const original of placeholderCountries) {
 }
 const placeholderSet = new Set(placeholderOriginals.keys());
 
-type Country = { name: string; d: string; trips: TripRef[]; placeholderLabel: string | null };
+type Country = {
+  name: string;
+  d: string;
+  trips: TripRef[];
+  placeholderLabel: string | null;
+  bounds: [number, number, number, number];
+};
 const countries: Country[] = fc.features.map((f: any) => {
   const name = f.properties.NAME as string;
   const list = tripsByCountry.get(name) ?? [];
@@ -83,7 +117,14 @@ const countries: Country[] = fc.features.map((f: any) => {
     list.length === 0 && placeholderSet.has(name)
       ? (placeholderOriginals.get(name) ?? [name]).join(', ')
       : null;
-  return { name, d: trimPath(path(f)), trips: list, placeholderLabel };
+  const [[bx0, by0], [bx1, by1]] = path.bounds(f);
+  return {
+    name,
+    d: trimPath(path(f)),
+    trips: list,
+    placeholderLabel,
+    bounds: [bx0, by0, bx1, by1],
+  };
 });
 
 // Pin definitions for countries the 110m dataset doesn't draw. Multiple country
@@ -177,7 +218,46 @@ const totalTrips = trips.length;
     >
       <g class="map-layer">
         {countries.map((c) => (
-          c.trips.length > 0 ? (
+          c.trips.length > 1 ? (
+            <>
+              <clipPath id={`clip-${slugify(c.name)}`}>
+                <path d={c.d} />
+              </clipPath>
+              {(() => {
+                const sp = stripePattern(c.bounds, c.trips.length);
+                return (
+                  <g clip-path={`url(#clip-${slugify(c.name)})`}>
+                    <g transform={`rotate(${STRIPE_ANGLE} ${sp.cx} ${sp.cy})`}>
+                      {c.trips.map((t, ti) => (
+                        <a href={tripHref(t.id)} class="stripe-link">
+                          <title>{`${c.name} (${t.title})`}</title>
+                          {sp.bands
+                            .filter((b) => b.trip === ti)
+                            .map((b) => (
+                              <rect
+                                x={b.x}
+                                y={b.y}
+                                width={b.width}
+                                height={b.height}
+                                fill={t.cover_color}
+                                class="country country--trip"
+                              />
+                            ))}
+                        </a>
+                      ))}
+                    </g>
+                  </g>
+                );
+              })()}
+              <path
+                d={c.d}
+                fill="none"
+                stroke="var(--color-bg)"
+                stroke-width="0.5"
+                class="country-outline"
+              />
+            </>
+          ) : c.trips.length === 1 ? (
             <a href={tripHref(c.trips[0].id)}>
               <path
                 d={c.d}
@@ -186,7 +266,7 @@ const totalTrips = trips.length;
                 stroke-width="0.5"
                 class="country country--trip"
               >
-                <title>{`${c.name} (${c.trips.map((t) => t.title).join(', ')})`}</title>
+                <title>{`${c.name} (${c.trips[0].title})`}</title>
               </path>
             </a>
           ) : c.placeholderLabel ? (
@@ -276,6 +356,17 @@ const totalTrips = trips.length;
   .country--trip:hover {
     opacity: 0.7;
     cursor: pointer;
+  }
+  /* Redrawn border for striped (multi-trip) countries; must not eat stripe clicks. */
+  .country-outline {
+    pointer-events: none;
+  }
+  /* Hovering any stripe of a trip dims that trip's whole set together. */
+  .stripe-link {
+    cursor: pointer;
+  }
+  .stripe-link:hover .country--trip {
+    opacity: 0.7;
   }
 </style>
 

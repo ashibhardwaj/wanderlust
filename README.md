@@ -40,7 +40,8 @@ excerpt: "Optional one-liner for the home card."
 Optional fields:
 
 - `hero_image`, `budget_band`, `where_i_stayed`
-- `trip_date: "YYYY-MM"` — used by the map page to pick the winning color when two trips share a country (most recent wins).
+- `trip_date: "YYYY-MM"` — orders trips (most recent first), which also sets the stripe order when a country has multiple trips (see the map note below).
+- `cover_color` must be clearly distinguishable from every other layer the map draws, so all states read at a glance: the page/map background, the muted unvisited-land fill, the "coming soon" placeholder shade, neighboring countries, and the other trips' colors. Avoid another near-identical warm tan (the current palette drifts that way and blends into the beige land). Low-contrast fills hurt accessibility, and matter doubly when two trips share a country (the map stripes them, which only reads if the colors differ).
 - `visa_refs: ["schengen", ...]` — anchor IDs on `/visa`. Renders a "Visa notes" link at the end of the itinerary, after `where_i_stayed`. Trip body stays passport-agnostic; the Indian-passport visa notes live on `/visa`. Add a new section to `src/pages/visa.astro` with a matching `id` (e.g. `<h2 id="schengen">`) before referencing it here.
 
 SIM and data info lives directly in the MDX body as a `### SIM and data` section alongside `### Book these before anything else` and `### Vegetarian food + drink`. No frontmatter field; just write the section.
@@ -72,10 +73,12 @@ src/
 ```
 
 The home page renders an SVG world map at build time using `d3-geo`. Country
-fills match the trip's `cover_color`; if two trips share a country, the one
-with the most recent `trip_date` wins. Pan and zoom are handled client-side
-via `d3-zoom` + `d3-selection`. Single taps still fire the country link to
-the trip detail.
+fills match the trip's `cover_color`. If two (or more) trips share a country,
+it's filled with thin alternating diagonal stripes, one color per trip, each
+stripe set linking to its trip; `STRIPE_ANGLE` (45 = diagonal, 0/90 =
+horizontal/vertical) and `STRIPE_BANDS` in `index.astro` control the look. Pan
+and zoom are handled client-side via `d3-zoom` + `d3-selection`. Single taps
+still fire the country link to the trip detail.
 
 The dataset is Natural Earth 110m with India's borders patched to include
 Pakistan-administered Kashmir and Aksai Chin (from cB-Abhinav-Gautam's
