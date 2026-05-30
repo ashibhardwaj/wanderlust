@@ -44,6 +44,9 @@ const isActive = (href: string) => currentPath === href || currentPath.startsWit
     <link rel="stylesheet" href={fontsUrl} media="print" onload="this.media='all'" />
     <noscript><link rel="stylesheet" href={fontsUrl} /></noscript>
     <title>{title}</title>
+    {import.meta.env.PROD && (
+      <script is:inline data-goatcounter="https://wanderlust.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+    )}
   </head>
   <body>
     <header class="border-b" style="border-color: var(--color-line)">
@@ -75,5 +78,35 @@ const isActive = (href: string) => currentPath === href || currentPath.startsWit
         </p>
       </div>
     </footer>
+
+    <button
+      id="to-top"
+      type="button"
+      aria-label="Back to top"
+      class="pointer-events-none fixed bottom-6 right-6 z-50 flex h-11 w-11 items-center justify-center rounded-full border opacity-0 transition-opacity duration-200 hover:border-[color:var(--color-ink)]"
+      style="background-color: var(--color-bg); border-color: var(--color-line); color: var(--color-ink); box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08)"
+    >
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="12" y1="19" x2="12" y2="5"></line>
+        <polyline points="5 12 12 5 19 12"></polyline>
+      </svg>
+    </button>
+
+    <script>
+      const btn = document.getElementById('to-top');
+      if (btn) {
+        const toggle = () => {
+          const show = window.scrollY > 600;
+          btn.classList.toggle('opacity-0', !show);
+          btn.classList.toggle('pointer-events-none', !show);
+        };
+        toggle();
+        window.addEventListener('scroll', toggle, { passive: true });
+        btn.addEventListener('click', () => {
+          const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+        });
+      }
+    </script>
   </body>
 </html>
