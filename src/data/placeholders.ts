@@ -39,7 +39,6 @@ export const placeholderCountries: string[] = [
   'Slovakia',
   'Singapore',
   'Turkey',
-  'USA',
   'UAE',
   'Vatican City',
   'Vietnam',
