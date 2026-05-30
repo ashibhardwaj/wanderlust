@@ -17,7 +17,7 @@ const { href, title, countries, days, vibes, excerpt, cover_color } = Astro.prop
   class="group block border transition-colors hover:border-[color:var(--color-ink)]"
   style="border-color: var(--color-line)"
 >
-  <div class="aspect-[3/2] w-full" style={`background-color: ${cover_color}`}></div>
+  <div class="h-24 w-full" style={`background-color: ${cover_color}`}></div>
   <div class="p-6">
     <p class="font-mono text-xs uppercase tracking-widest" style="color: var(--color-muted)">
       {countries.join(' · ')} &middot; {days} days

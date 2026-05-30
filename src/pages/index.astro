@@ -214,7 +214,7 @@ const totalTrips = trips.length;
       viewBox={`0 0 ${width} ${height}`}
       class="block h-auto w-full"
       role="img"
-      aria-label="World map highlighting countries with trip itineraries. Scroll or pinch to zoom; drag to pan."
+      aria-label="World map highlighting countries with trip itineraries. Use ctrl or cmd plus scroll, or two fingers, to zoom; drag to pan."
     >
       <g class="map-layer">
         {countries.map((c) => (
@@ -345,7 +345,9 @@ const totalTrips = trips.length;
 <style>
   #world-map {
     cursor: grab;
-    touch-action: none;
+    /* Allow normal vertical page scroll over the map; the zoom filter below
+       reserves two-finger / ctrl+wheel for actually zooming the map. */
+    touch-action: pan-y;
   }
   #world-map:active {
     cursor: grabbing;
@@ -383,6 +385,13 @@ const totalTrips = trips.length;
     const zoomBehavior = zoom<SVGSVGElement, unknown>()
       .scaleExtent([1, 12])
       .translateExtent([[0, 0], [w, h]])
+      // Don't hijack the page: wheel zooms only with ctrl/cmd, touch only with
+      // two fingers (one-finger swipe scrolls the page). Mouse drag still pans.
+      .filter((event: any) => {
+        if (event.type === 'wheel') return event.ctrlKey || event.metaKey;
+        if (event.type === 'touchstart') return event.touches.length >= 2;
+        return true;
+      })
       .on('zoom', (event) => {
         layer.attr('transform', event.transform.toString());
       });

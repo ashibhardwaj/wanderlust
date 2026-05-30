@@ -82,6 +82,23 @@ const visaBase = `${base.replace(/\/$/, '')}/visa`;
       </aside>
     )}
 
+    <aside class="mx-auto max-w-2xl mt-24 flex items-start gap-4 border p-6" style="border-color: var(--color-line)">
+      <span class="mt-0.5 shrink-0" style="color: var(--color-accent)">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+          <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+        </svg>
+      </span>
+      <div>
+        <p class="font-mono text-[10px] uppercase tracking-widest" style="color: var(--color-muted)">Photos</p>
+        <p class="mt-2 text-sm leading-relaxed" style="color: var(--color-muted)">
+          I keep this site text-only. See the pictures on my Instagram,{' '}
+          <a href="https://instagram.com/aaashi.b" class="hover:text-[color:var(--color-ink)]" style="color: var(--color-accent)">@aaashi.b &rarr;</a>
+        </p>
+      </div>
+    </aside>
+
     {d.visa_refs && d.visa_refs.length > 0 && (
       <aside class="prose-trip mt-16 border-t pt-8" style="border-color: var(--color-line)">
         <p class="font-mono text-[10px] uppercase tracking-widest" style="color: var(--color-muted)">

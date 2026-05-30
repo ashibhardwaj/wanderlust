@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ashibhardwaj.github.io/wanderlust/sitemap-index.xml

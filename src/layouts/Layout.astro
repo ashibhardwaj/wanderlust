@@ -8,8 +8,19 @@ interface Props {
 
 const { title, description = 'Travel itineraries by Ashi.' } = Astro.props;
 const base = import.meta.env.BASE_URL;
+const canonicalURL = Astro.url.href;
 const fontsUrl =
   'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap';
+
+const trimmed = (s: string) => s.replace(/\/$/, '');
+const navLinks = [
+  { href: `${trimmed(base)}/trips`, label: 'trips' },
+  { href: `${trimmed(base)}/visa`, label: 'visa' },
+  { href: `${trimmed(base)}/tips`, label: 'tips' },
+  { href: `${trimmed(base)}/about`, label: 'about' },
+];
+const currentPath = trimmed(Astro.url.pathname);
+const isActive = (href: string) => currentPath === href || currentPath.startsWith(`${href}/`);
 ---
 
 <!doctype html>
@@ -18,6 +29,15 @@ const fontsUrl =
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="wanderlust" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalURL} />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preload" as="style" href={fontsUrl} />
@@ -30,10 +50,16 @@ const fontsUrl =
       <div class="mx-auto flex max-w-5xl flex-col gap-3 px-6 py-6 md:flex-row md:items-baseline md:justify-between">
         <a href={base} class="font-display text-xl font-medium tracking-tight">wanderlust</a>
         <nav class="font-mono text-xs uppercase tracking-widest" style="color: var(--color-muted)">
-          <a href={`${base.replace(/\/$/, '')}/trips`} class="hover:text-[color:var(--color-ink)]">trips</a>
-          <a href={`${base.replace(/\/$/, '')}/visa`} class="ml-6 hover:text-[color:var(--color-ink)]">visa</a>
-          <a href={`${base.replace(/\/$/, '')}/tips`} class="ml-6 hover:text-[color:var(--color-ink)]">tips</a>
-          <a href={`${base.replace(/\/$/, '')}/about`} class="ml-6 hover:text-[color:var(--color-ink)]">about</a>
+          {navLinks.map((link, i) => (
+            <a
+              href={link.href}
+              class:list={[i > 0 && 'ml-6', 'hover:text-[color:var(--color-ink)]']}
+              style={isActive(link.href) ? 'color: var(--color-ink)' : undefined}
+              aria-current={isActive(link.href) ? 'page' : undefined}
+            >
+              {link.label}
+            </a>
+          ))}
         </nav>
       </div>
     </header>
