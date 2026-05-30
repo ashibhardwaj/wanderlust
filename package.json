@@ -14,10 +14,12 @@
   "dependencies": {
     "@astrojs/mdx": "^5.0.6",
     "@astrojs/sitemap": "^3.7.3",
+    "@resvg/resvg-js": "^2.6.2",
     "@tailwindcss/vite": "^4.3.0",
     "astro": "^6.3.8",
     "d3-selection": "^3.0.0",
     "d3-zoom": "^3.0.0",
+    "satori": "^0.26.0",
     "tailwindcss": "^4.3.0"
   },
   "devDependencies": {
