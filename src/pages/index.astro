@@ -208,7 +208,7 @@ const totalTrips = trips.length;
     </p>
   </section>
 
-  <div class="border" style="border-color: var(--color-line)">
+  <div class="border relative" style="border-color: var(--color-line)">
     <svg
       id="world-map"
       viewBox={`0 0 ${width} ${height}`}
@@ -322,6 +322,10 @@ const totalTrips = trips.length;
         ))}
       </g>
     </svg>
+    <div class="zoom-controls">
+      <button id="zoom-in" aria-label="Zoom in" title="Zoom in">+</button>
+      <button id="zoom-out" aria-label="Zoom out" title="Zoom out">−</button>
+    </div>
   </div>
 
   {totalTrips > 0 && (
@@ -351,6 +355,32 @@ const totalTrips = trips.length;
   }
   #world-map:active {
     cursor: grabbing;
+  }
+  .zoom-controls {
+    position: absolute;
+    bottom: 0.75rem;
+    right: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .zoom-controls button {
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    line-height: 1;
+    background: var(--color-bg);
+    color: var(--color-ink);
+    border: 1px solid var(--color-line);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.1s ease;
+  }
+  .zoom-controls button:hover {
+    background: var(--color-line);
   }
   .country {
     transition: opacity 0.15s ease;
@@ -396,5 +426,15 @@ const totalTrips = trips.length;
         layer.attr('transform', event.transform.toString());
       });
     svg.call(zoomBehavior as any);
+
+    const zoomBy = (factor: number) => {
+      svg.transition().duration(250).call(
+        (zoomBehavior as any).scaleBy,
+        factor
+      );
+    };
+
+    document.getElementById('zoom-in')?.addEventListener('click', () => zoomBy(2));
+    document.getElementById('zoom-out')?.addEventListener('click', () => zoomBy(0.5));
   }
 </script>
