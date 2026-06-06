@@ -412,17 +412,22 @@ const totalTrips = trips.length;
     const [, , w, h] = vb;
     const svg = select(svgEl as unknown as Element);
     const layer = svg.select('g.map-layer');
+    let currentScale = 1;
     const zoomBehavior = zoom<SVGSVGElement, unknown>()
       .scaleExtent([1, 12])
       .translateExtent([[0, 0], [w, h]])
-      // Don't hijack the page: wheel zooms only with ctrl/cmd, touch only with
-      // two fingers (one-finger swipe scrolls the page). Mouse drag still pans.
+      // Don't hijack the page: wheel zooms only with ctrl/cmd. Touch requires
+      // two fingers at scale 1 (so one-finger swipe still scrolls the page),
+      // but once the user has zoomed in, one finger can pan the map freely.
       .filter((event: any) => {
         if (event.type === 'wheel') return event.ctrlKey || event.metaKey;
-        if (event.type === 'touchstart') return event.touches.length >= 2;
+        if (event.type === 'touchstart') return event.touches.length >= 2 || currentScale > 1;
         return true;
       })
       .on('zoom', (event) => {
+        currentScale = event.transform.k;
+        // Allow one-finger pan when zoomed in; restore page scroll at scale 1.
+        (svgEl as HTMLElement).style.touchAction = currentScale > 1 ? 'none' : 'pan-y';
         layer.attr('transform', event.transform.toString());
       });
     svg.call(zoomBehavior as any);
