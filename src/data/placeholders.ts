@@ -41,6 +41,5 @@ export const placeholderCountries: string[] = [
   'Turkey',
   'UAE',
   'Vatican City',
-  'Vietnam',
   'Wales',
 ];
