@@ -42,11 +42,13 @@ Optional fields:
 - `hero_image`, `budget_band`, `where_i_stayed`
 - `trip_date: "YYYY-MM"` — orders trips (most recent first), which also sets the stripe order when a country has multiple trips (see the map note below).
 - `cover_color` must be clearly distinguishable from every other layer the map draws, so all states read at a glance: the page/map background, the muted unvisited-land fill, the "coming soon" placeholder shade, neighboring countries, and the other trips' colors. Avoid another near-identical warm tan (the current palette drifts that way and blends into the beige land). Low-contrast fills hurt accessibility, and matter doubly when two trips share a country (the map stripes them, which only reads if the colors differ).
-- `visa_refs: ["schengen", ...]` — anchor IDs on `/visa`. Renders a "Visa notes" link at the end of the itinerary, after `where_i_stayed`. Trip body stays passport-agnostic; the Indian-passport visa notes live on `/visa`. Add a new section to `src/pages/visa.astro` with a matching `id` (e.g. `<h2 id="schengen">`) before referencing it here.
+- `visa_refs: ["schengen", ...]` — anchor IDs on `/visa`. Renders a "Visa notes" link at the end of the itinerary, after `where_i_stayed`. Trip body stays passport-agnostic; the Indian-passport visa notes live on `/visa`. Add a new section to `src/pages/visa.astro` with a matching `id` (e.g. `<h2 id="schengen">`) before referencing it here. The "Jump to" nav near the top of `visa.astro` is a hardcoded array, not generated from the sections, so add the new `[id, label]` entry there too (in the same order as the body) or it won't appear in the nav.
 
 SIM and data info lives directly in the MDX body as a `### SIM and data` section alongside `### Book these before anything else` and `### Vegetarian food + drink`. No frontmatter field; just write the section.
 
 Country names should match the world-atlas TopoJSON canonical form so the map page can fill them. Spain, Portugal, France, Italy, Japan work as-is. For common mismatches (UK, Czech Republic, Türkiye), see the alias map in `src/pages/map.astro`.
+
+Itineraries are origin-agnostic: `Day 1` starts on arrival in the destination country, never the home-city departure (a reader can begin the trip from anywhere). What matters is the entry and exit point within the country, so note open-jaw / multi-city flights in the Overview where the route lands in one city and leaves from another, rather than dedicating a day to flying out from home. `days` counts in-country days only.
 
 Body is plain MDX. The styling expects:
 
