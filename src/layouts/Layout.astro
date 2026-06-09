@@ -55,6 +55,23 @@ const isActive = (href: string) => currentPath === href || currentPath.startsWit
       <script is:inline data-goatcounter="https://wanderlust.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
     )}
   </head>
+  <style>
+    /* Active nav item: ink colour plus an accent underline so the current
+       page is unmistakable, not just a subtle shade difference. */
+    .nav-link {
+      position: relative;
+      padding-bottom: 0.35rem;
+    }
+    .nav-link--active::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 2px;
+      background: var(--color-accent);
+    }
+  </style>
   <body>
     <header class="border-b" style="border-color: var(--color-line)">
       <div class="mx-auto flex max-w-5xl flex-col gap-3 px-6 py-6 md:flex-row md:items-baseline md:justify-between">
@@ -63,7 +80,11 @@ const isActive = (href: string) => currentPath === href || currentPath.startsWit
           {navLinks.map((link, i) => (
             <a
               href={link.href}
-              class:list={[i > 0 && 'ml-6', 'hover:text-[color:var(--color-ink)]']}
+              class:list={[
+                i > 0 && 'ml-6',
+                'nav-link hover:text-[color:var(--color-ink)]',
+                isActive(link.href) && 'nav-link--active',
+              ]}
               style={isActive(link.href) ? 'color: var(--color-ink)' : undefined}
               aria-current={isActive(link.href) ? 'page' : undefined}
             >
@@ -81,7 +102,15 @@ const isActive = (href: string) => currentPath === href || currentPath.startsWit
     <footer class="mt-24 border-t" style="border-color: var(--color-line)">
       <div class="mx-auto max-w-5xl px-6 py-10">
         <p class="font-mono text-xs uppercase tracking-widest" style="color: var(--color-muted)">
-          by ashi &middot; <a href="https://instagram.com/aaashi.b" class="hover:text-[color:var(--color-ink)]">@aaashi.b</a>
+          by ashi &middot;
+          <a href="https://instagram.com/aaashi.b" class="inline-flex items-center gap-1.5 align-middle hover:text-[color:var(--color-ink)]">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+            </svg>
+            @aaashi.b
+          </a>
         </p>
       </div>
     </footer>

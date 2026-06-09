@@ -204,7 +204,7 @@ const totalTrips = trips.length;
       Where I've been.
     </h1>
     <p class="mt-6 text-base leading-relaxed" style="color: var(--color-muted)">
-      {totalCountriesWritten} {totalCountriesWritten === 1 ? 'country' : 'countries'} written up across {totalTrips} {totalTrips === 1 ? 'trip' : 'trips'}{totalCountriesPlaceholder > 0 && `, with ${totalCountriesPlaceholder} more on the way`}. Tap a colored country to read its itinerary; shaded ones are coming soon.
+      {totalCountriesWritten} {totalCountriesWritten === 1 ? 'country' : 'countries'} written up across {totalTrips} {totalTrips === 1 ? 'trip' : 'trips'}{totalCountriesPlaceholder > 0 && `, with ${totalCountriesPlaceholder} more on the way, shaded on the map`}.
     </p>
   </section>
 
@@ -327,6 +327,10 @@ const totalTrips = trips.length;
       <button id="zoom-out" aria-label="Zoom out" title="Zoom out">−</button>
     </div>
   </div>
+  <p class="map-hint" aria-hidden="true">
+    <span class="map-hint__dot"></span>
+    Tap a colored country to open its itinerary
+  </p>
 
   {totalTrips > 0 && (
     <ul class="mt-10 flex flex-wrap gap-x-6 gap-y-2">
@@ -335,7 +339,7 @@ const totalTrips = trips.length;
           <span class="inline-block h-3 w-3" style={`background-color: ${t.data.cover_color}`}></span>
           <a
             href={tripHref(t.id)}
-            class="font-mono text-xs uppercase tracking-widest hover:text-[color:var(--color-ink)]"
+            class="text-sm hover:text-[color:var(--color-ink)]"
             style="color: var(--color-muted)"
           >
             {t.data.title}
@@ -348,7 +352,8 @@ const totalTrips = trips.length;
 
 <style>
   #world-map {
-    cursor: grab;
+    /* Tapping a country is the primary action, so default to a pointer. */
+    cursor: pointer;
     /* Allow normal vertical page scroll over the map; the zoom filter below
        reserves two-finger / ctrl+wheel for actually zooming the map. */
     touch-action: pan-y;
@@ -363,6 +368,32 @@ const totalTrips = trips.length;
     display: flex;
     flex-direction: column;
     gap: 2px;
+  }
+  /* Standing affordance that the map is tappable, not just a picture. Sits as a
+     caption just under the map so it never covers the geography. */
+  .map-hint {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.02em;
+    color: var(--color-muted);
+  }
+  .map-hint__dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: var(--color-accent);
+    animation: map-hint-pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes map-hint-pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.5); opacity: 0.45; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .map-hint__dot { animation: none; }
   }
   .zoom-controls button {
     width: 2rem;
