@@ -24,7 +24,6 @@ export const placeholderCountries: string[] = [
   'Indonesia',
   'Ireland',
   'Italy',
-  'Japan',
   'Mauritius',
   'Malaysia',
   'Macau',
