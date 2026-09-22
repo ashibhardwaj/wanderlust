@@ -41,9 +41,3 @@ export const placeholderCountries: string[] = [
   'Vatican City',
   'Wales',
 ];
-
-// Planned dates for trips that are on the map but do not have an itinerary yet.
-// The entry is removed when the published trip takes its place.
-export const placeholderTripDates: Record<string, string> = {
-  Seychelles: '2026-09',
-};
