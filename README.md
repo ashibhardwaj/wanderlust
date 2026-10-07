@@ -2,6 +2,8 @@
 
 Travel itineraries by Ashi. Static site built with Astro, deployed to GitHub Pages.
 
+Website: [https://ashibhardwaj.github.io/wanderlust/](https://ashibhardwaj.github.io/wanderlust/)
+
 ## Stack
 
 - Astro 6 + Content Collections
